@@ -1,6 +1,6 @@
-// TransactionHistory.js
+// src/components/wallet/TransactionHistory.js
 import React, { useState, useEffect } from 'react';
-import { getTransactions } from '../../services/walletService';
+import walletService from '../../services/walletService';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import Loader from '../common/Loader';
 import Alert from '../common/Alert';
@@ -28,13 +28,16 @@ const TransactionHistory = () => {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const { transactions: data, total } = await getTransactions({
+
+      const { transactions, total } = await walletService.getTransactions({
         page: pagination.page,
         limit: pagination.limit,
-        ...filters
+        type: filters.type,
+        startDate: filters.dateFrom,
+        endDate: filters.dateTo,
       });
-      
-      setTransactions(data);
+
+      setTransactions(transactions || []);
       setPagination(prev => ({ ...prev, total }));
     } catch (err) {
       setError('Failed to load transactions');
@@ -47,23 +50,21 @@ const TransactionHistory = () => {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
-    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when filters change
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page
   };
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
   };
 
-  if (loading && pagination.page === 1) return <Loader />;
-  
   const totalPages = Math.ceil(pagination.total / pagination.limit);
 
   return (
     <div className="transaction-history-container">
       <h2>Transaction History</h2>
-      
+
       {error && <Alert type="error" message={error} />}
-      
+
       <div className="filters-container">
         <div className="filter-group">
           <label htmlFor="type">Type</label>
@@ -74,26 +75,12 @@ const TransactionHistory = () => {
             onChange={handleFilterChange}
           >
             <option value="all">All Types</option>
-            <option value="credit">Credits</option>
-            <option value="debit">Debits</option>
+            <option value="deposit">Deposits</option>
+            <option value="transfer">Transfers</option>
+            <option value="withdrawal">Withdrawals</option>
           </select>
         </div>
-        
-        <div className="filter-group">
-          <label htmlFor="status">Status</label>
-          <select
-            id="status"
-            name="status"
-            value={filters.status}
-            onChange={handleFilterChange}
-          >
-            <option value="all">All Statuses</option>
-            <option value="completed">Completed</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-          </select>
-        </div>
-        
+
         <div className="filter-group">
           <label htmlFor="dateFrom">From Date</label>
           <input
@@ -104,7 +91,7 @@ const TransactionHistory = () => {
             onChange={handleFilterChange}
           />
         </div>
-        
+
         <div className="filter-group">
           <label htmlFor="dateTo">To Date</label>
           <input
@@ -116,14 +103,12 @@ const TransactionHistory = () => {
           />
         </div>
       </div>
-      
+
       {loading ? (
-        <div className="loading-overlay">
-          <Loader />
-        </div>
+        <Loader />
       ) : transactions.length === 0 ? (
         <div className="no-results">
-          <p>No transactions found matching your filters.</p>
+          <p>No transactions found.</p>
         </div>
       ) : (
         <>
@@ -131,47 +116,41 @@ const TransactionHistory = () => {
             <thead>
               <tr>
                 <th>Date</th>
-                <th>Transaction ID</th>
+                <th>Txn ID</th>
                 <th>Description</th>
                 <th>Amount</th>
-                <th>Balance</th>
-                <th>Status</th>
+                <th>From</th>
+                <th>To</th>
               </tr>
             </thead>
             <tbody>
-              {transactions.map((transaction) => (
-                <tr key={transaction._id}>
-                  <td>{formatDate(transaction.timestamp)}</td>
-                  <td>{transaction._id}</td>
-                  <td>{transaction.description}</td>
-                  <td className={transaction.type === 'credit' ? 'amount-positive' : 'amount-negative'}>
-                    {transaction.type === 'credit' ? '+' : '-'}{formatCurrency(transaction.amount)}
+              {transactions.map((tx) => (
+                <tr key={tx._id}>
+                  <td>{formatDate(tx.createdAt)}</td>
+                  <td>{tx.transactionId || tx._id}</td>
+                  <td>{tx.description}</td>
+                  <td className={tx.type === 'deposit' ? 'amount-positive' : 'amount-negative'}>
+                    {tx.type === 'deposit' ? '+' : '-'}{formatCurrency(tx.amount)}
                   </td>
-                  <td>{formatCurrency(transaction.balanceAfter)}</td>
-                  <td>
-                    <span className={`status status-${transaction.status.toLowerCase()}`}>
-                      {transaction.status}
-                    </span>
-                  </td>
+                  <td>{tx.from?.name || '-'}</td>
+                  <td>{tx.to?.name || '-'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          
+
           <div className="pagination">
-            <button 
+            <button
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
               className="pagination-btn"
             >
               Previous
             </button>
-            
             <span className="pagination-info">
               Page {pagination.page} of {totalPages}
             </span>
-            
-            <button 
+            <button
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page >= totalPages}
               className="pagination-btn"

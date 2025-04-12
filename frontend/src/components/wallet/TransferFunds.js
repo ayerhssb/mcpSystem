@@ -1,6 +1,6 @@
 // TransferFunds.js
 import React, { useState, useEffect } from 'react';
-import { transferFunds, getWalletBalance } from '../../services/walletService';
+import walletService from '../../services/walletService';
 import partnerService from '../../services/partnerService';
 import { useNavigate } from 'react-router-dom';
 import { validateAmount } from '../../utils/validators';
@@ -23,7 +23,7 @@ const TransferFunds = () => {
       try {
         setLoading(true);
         // Fetch wallet balance
-        const balanceData = await getWalletBalance();
+        const balanceData = await walletService.getWalletBalance();
         setBalance(balanceData.balance);
         
         // Fetch partners separately to handle the response properly
@@ -75,11 +75,8 @@ const TransferFunds = () => {
 
     try {
       setSubmitting(true);
-      await transferFunds({
-        amount: parseFloat(amount),
-        partnerId,
-        description: description || 'Fund transfer'
-      });
+      await walletService.transferFunds({ partnerId, amount: parseFloat(amount), description });
+
       
       // Redirect to wallet overview on success
       navigate('/wallet');
