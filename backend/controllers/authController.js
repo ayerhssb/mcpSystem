@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 // Generate JWT Token with expiration (4 hours)
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '4h', // Changed from 30d to 4h
+    expiresIn: '4h',
   });
 };
 
@@ -13,26 +13,22 @@ const generateToken = (id) => {
 const sendTokenCookie = (res, token) => {
   res.cookie('jwt', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV !== 'development', // use secure in production
+    secure: process.env.NODE_ENV !== 'development',
     sameSite: 'strict',
-    maxAge: 4 * 60 * 60 * 1000, // 4 hours in milliseconds
+    maxAge: 4 * 60 * 60 * 1000, // 4 hours
   });
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
+// @desc Register a new user
 const registerUser = async (req, res) => {
   try {
     const { name, email, password, phone, address } = req.body;
 
-    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Create new user
     const user = await User.create({
       name,
       email,
@@ -41,7 +37,6 @@ const registerUser = async (req, res) => {
       address,
     });
 
-    // Create wallet for the user
     const wallet = await Wallet.create({
       owner: user._id,
       ownerModel: 'User',
@@ -51,7 +46,7 @@ const registerUser = async (req, res) => {
     if (user) {
       const token = generateToken(user._id);
       sendTokenCookie(res, token);
-      
+
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -67,28 +62,32 @@ const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Login user & set cookie
-// @route   POST /api/auth/login
-// @access  Public
+// @desc Login user
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check if user exists
     const user = await User.findOne({ email });
 
-    if (user && (await user.matchPassword(password))) {
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    console.log('🔐 Password match:', isMatch);
+
+    if (isMatch) {
       const token = generateToken(user._id);
       sendTokenCookie(res, token);
-      
-      res.json({
+
+      return res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
     console.error(`Error in loginUser: ${error.message}`);
@@ -96,9 +95,7 @@ const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Logout user / clear cookie
-// @route   POST /api/auth/logout
-// @access  Public
+// @desc Logout user
 const logoutUser = (req, res) => {
   res.cookie('jwt', '', {
     httpOnly: true,
@@ -107,22 +104,15 @@ const logoutUser = (req, res) => {
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
-// @desc    Check if user is authenticated
-// @route   GET /api/auth/check
-// @access  Public
+// @desc Check authentication
 const checkAuth = async (req, res) => {
-  // This route will be handled by the auth middleware
-  // If it passes, user is authenticated
   res.status(200).json({ authenticated: true });
 };
 
-// @desc    Get user profile
-// @route   GET /api/auth/profile
-// @access  Private
+// @desc Get profile
 const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
-    
     if (user) {
       res.json(user);
     } else {
@@ -134,9 +124,7 @@ const getUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
+// @desc Update profile
 const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

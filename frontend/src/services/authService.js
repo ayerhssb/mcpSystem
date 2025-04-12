@@ -1,59 +1,85 @@
+// src/services/authService.js
 import axios from 'axios';
-import { API_URL } from '../config';
 
-// Login function:
-//change comment
-export const login = async (email, password) => {
-  try {
-    const response = await axios.post(`${API_URL}/api/auth/login`, {
-      email,
-      password
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Login error:', error.response?.data || error.message);
-    throw error.response?.data || { message: 'Login failed' };
-  }
-};
+axios.defaults.withCredentials = true;
+const API_URL = process.env.REACT_APP_API_URL || '/api/auth';
 
-// Register function — now with phone and address
+
+
+// Register user
 export const register = async (name, email, password, phone, address) => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/register`, {
+    const { data } = await axios.post(`${API_URL}/register`, {
       name,
       email,
       password,
       phone,
       address
     });
-    return response.data;
+    return data;
   } catch (error) {
-    console.error('Registration error:', error.response?.data || error.message);
-    throw error.response?.data || { message: 'Registration failed' };
+    const message = 
+      error.response?.data?.message || error.message;
+    throw new Error(message);
   }
 };
 
-// Logout function
-export const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
+// Login user
+export const login = async (email, password) => {
+  try {
+    const { data } = await axios.post(`${API_URL}/login`, {
+      email,
+      password
+    });
+    return data;
+  } catch (error) {
+    const message = 
+      error.response?.data?.message || error.message;
+    throw new Error(message);
+  }
+};
+
+// Logout user
+export const logout = async () => {
+  try {
+    await axios.post(`${API_URL}/logout`);
+    return true;
+  } catch (error) {
+    console.error('Logout error:', error);
+    return false;
+  }
 };
 
 // Check if user is authenticated
-export const isAuthenticated = () => {
-  return localStorage.getItem('token') !== null;
+export const checkAuthStatus = async () => {
+  try {
+    const { data } = await axios.get(`${API_URL}/check`);
+    return data.authenticated;
+  } catch (error) {
+    return false;
+  }
 };
 
-// Get current user
-export const getCurrentUser = () => {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+// Get user profile
+export const getUserProfile = async () => {
+  try {
+    const { data } = await axios.get(`${API_URL}/profile`);
+    return data;
+  } catch (error) {
+    const message = 
+      error.response?.data?.message || error.message;
+    throw new Error(message);
+  }
 };
 
-export default {
-  login,
-  register,
-  logout,
-  isAuthenticated,
-  getCurrentUser
+// Update user profile
+export const updateUserProfile = async (userData) => {
+  try {
+    const { data } = await axios.put(`${API_URL}/profile`, userData);
+    return data;
+  } catch (error) {
+    const message = 
+      error.response?.data?.message || error.message;
+    throw new Error(message);
+  }
 };

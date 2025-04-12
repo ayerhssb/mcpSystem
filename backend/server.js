@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const cookieParser = require('cookie-parser');
 
 // Load environment variables
 dotenv.config();
@@ -12,8 +13,13 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost:3000', // match frontend origin
+  credentials: true               // allows cookies from cross-origin
+}));
+
 
 // Define routes
 app.use('/api/auth', require('./routes/authRoutes'));

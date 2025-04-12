@@ -1,21 +1,21 @@
 // src/components/layout/Sidebar.js
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import React from "react";
+import { NavLink } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Sidebar = () => {
   const { user } = useAuth();
-  
+
   // Only show sidebar if user is logged in
   if (!user) return null;
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { path: '/partners', label: 'Pickup Partners', icon: '👥' },
-    { path: '/orders', label: 'Orders', icon: '📦' },
-    { path: '/wallet', label: 'Wallet', icon: '💰' },
-    { path: '/reports', label: 'Reports', icon: '📝' },
-    { path: '/profile', label: 'Profile', icon: '👤' },
+    { path: "/dashboard", label: "Dashboard", icon: "📊" },
+    { path: "/partners", label: "Pickup Partners", icon: "👥" },
+    { path: "/orders", label: "Orders", icon: "📦" },
+    { path: "/wallet", label: "Wallet", icon: "💰" },
+    { path: "/reports", label: "Reports", icon: "📝" },
+    { path: "/profile", label: "Profile", icon: "👤" },
   ];
 
   return (
@@ -23,7 +23,7 @@ const Sidebar = () => {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-white">MCP Portal</h2>
       </div>
-      
+
       <nav>
         <ul>
           {navItems.map((item) => (
@@ -32,10 +32,10 @@ const Sidebar = () => {
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center p-3 rounded-lg transition-colors ${
-                    isActive ? 'bg-blue-600' : 'hover:bg-gray-700'
-                  } ${
-                    isActive ? 'text-gray-700' : 'hover:bg-blue-600'
-                  }`
+                    isActive
+                      ? "bg-blue-600 text-white"
+                      : "hover:bg-gray-700 hover:text-white"
+                  } no-underline hover:no-underline`
                 }
               >
                 <span className="mr-3">{item.icon}</span>
@@ -50,4 +50,3 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
-

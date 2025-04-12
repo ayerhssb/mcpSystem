@@ -1,76 +1,90 @@
 // src/contexts/AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import authService from '../services/authService';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
+
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuthStatus = async () => {
+    // Check if user is already logged in on component mount
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
       try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const userData = await authService.getCurrentUser();
-          setUser(userData);
-        }
-      } catch (err) {
-        localStorage.removeItem('token');
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse stored user data', error);
+        localStorage.removeItem('user');
       }
-    };
-
-    checkAuthStatus();
+    }
+    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    setLoading(true);
     try {
-      const response = await authService.login(email, password);
-      localStorage.setItem('token', response.token);
-      setUser(response.user);
-      setError(null);
-      return response.user;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+      // Replace this with your actual API call
+      // For demo purposes, we'll simulate a successful login
+      const userData = {
+        id: '123',
+        name: 'Test User',
+        email: email,
+        role: 'admin'
+      };
+
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      throw new Error(error.message || 'Login failed');
     }
   };
 
-  const register = async (userData) => {
-    setLoading(true);
+  const register = async (name, email, password, phone, address) => {
     try {
-      const response = await authService.register(userData);
-      localStorage.setItem('token', response.token);
-      setUser(response.user);
-      setError(null);
-      return response.user;
-    } catch (err) {
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
+      // Replace this with your actual API call
+      // For demo purposes, we'll simulate a successful registration
+      const userData = {
+        id: '123',
+        name: name,
+        email: email,
+        phone: phone,
+        address: address,
+        role: 'user'
+      };
+
+      setUser(userData);
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
+    } catch (error) {
+      throw new Error(error.message || 'Registration failed');
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
     setUser(null);
+    localStorage.removeItem('user');
+    toast.info('You have been logged out');
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  const checkAuthStatus = async () => {
+    // In a real app, you would verify the token with your backend
+    return !!user;
+  };
 
-export const useAuth = () => useContext(AuthContext);
+  const value = {
+    user,
+    loading,
+    login,
+    register,
+    logout,
+    checkAuthStatus
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
