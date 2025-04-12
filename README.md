@@ -1,4 +1,4 @@
-# MCP System - Merchant Collection Platform
+# MCP System - Micro Collection Partner
 
 A full-stack web dashboard that enables merchant collection partners (MCPs) to manage pickup partners, assign orders, view transactions, and handle wallet-based fund transfers in real-time.
 
