@@ -1,90 +1,90 @@
 // src/contexts/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+
   useEffect(() => {
-    // Check if user is already logged in on component mount
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+    const fetchUserProfile = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse stored user data', error);
-        localStorage.removeItem('user');
+        const { data } = await axios.get(`${API_URL}/auth/profile`, {
+          withCredentials: true,
+        });
+        setUser(data);
+      } catch (err) {
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setLoading(false);
-  }, []);
+    };
+
+    fetchUserProfile();
+  }, [API_URL]);
 
   const login = async (email, password) => {
     try {
-      // Replace this with your actual API call
-      // For demo purposes, we'll simulate a successful login
-      const userData = {
-        id: '123',
-        name: 'Test User',
-        email: email,
-        role: 'admin'
-      };
-
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      return userData;
+      const { data } = await axios.post(
+        `${API_URL}/auth/login`,
+        { email, password },
+        { withCredentials: true }
+      );
+      setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
+      return data;
     } catch (error) {
-      throw new Error(error.message || 'Login failed');
+      throw new Error(error.response?.data?.message || 'Login failed');
     }
   };
 
   const register = async (name, email, password, phone, address) => {
     try {
-      // Replace this with your actual API call
-      // For demo purposes, we'll simulate a successful registration
-      const userData = {
-        id: '123',
-        name: name,
-        email: email,
-        phone: phone,
-        address: address,
-        role: 'user'
-      };
-
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-      return userData;
+      const { data } = await axios.post(
+        `${API_URL}/auth/register`,
+        { name, email, password, phone, address },
+        { withCredentials: true }
+      );
+      setUser(data);
+      localStorage.setItem('user', JSON.stringify(data));
+      return data;
     } catch (error) {
-      throw new Error(error.message || 'Registration failed');
+      throw new Error(error.response?.data?.message || 'Registration failed');
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
-    toast.info('You have been logged out');
+  const logout = async () => {
+    try {
+      await axios.post(`${API_URL}/auth/logout`, {}, { withCredentials: true });
+      setUser(null);
+      localStorage.removeItem('user');
+      toast.info('You have been logged out');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const checkAuthStatus = async () => {
-    // In a real app, you would verify the token with your backend
-    return !!user;
+    try {
+      const { data } = await axios.get(`${API_URL}/auth/check`, {
+        withCredentials: true,
+      });
+      return data.authenticated;
+    } catch {
+      return false;
+    }
   };
 
-  const value = {
-    user,
-    loading,
-    login,
-    register,
-    logout,
-    checkAuthStatus
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout, checkAuthStatus }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };

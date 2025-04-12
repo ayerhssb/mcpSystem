@@ -14,10 +14,27 @@ const OrdersList = () => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        setLoading(true);
         const data = await orderService.getAllOrders();
-        setOrders(data);
+        
+        // Handle different response formats consistently
+        if (Array.isArray(data)) {
+          setOrders(data);
+        } else if (data && typeof data === 'object') {
+          // If it's an object with orders array property
+          if (Array.isArray(data.orders)) {
+            setOrders(data.orders);
+          } else {
+            // If it's just a data object with no orders array
+            setOrders([data]);
+          }
+        } else {
+          setOrders([]);
+        }
+        
         setLoading(false);
       } catch (err) {
+        console.error('Error fetching orders:', err);
         setError('Failed to load orders. Please try again.');
         setLoading(false);
       }
@@ -139,4 +156,3 @@ const OrdersList = () => {
 };
 
 export default OrdersList;
-

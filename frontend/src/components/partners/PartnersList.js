@@ -13,16 +13,24 @@ const PartnersList = () => {
   useEffect(() => {
     const fetchPartners = async () => {
       try {
+        setLoading(true);
         const data = await partnerService.getAllPartners();
-        // Fix: Extract the partners array from the response
-        if (data && data.partners && Array.isArray(data.partners)) {
-          setPartners(data.partners);
-        } else if (Array.isArray(data)) {
+        
+        // Handle different response formats consistently
+        if (Array.isArray(data)) {
           setPartners(data);
+        } else if (data && typeof data === 'object') {
+          // If it's an object with a partners array property
+          if (Array.isArray(data.partners)) {
+            setPartners(data.partners);
+          } else {
+            // If it's just a data object with no partners array
+            setPartners([data]);
+          }
         } else {
-          console.error('Unexpected data format:', data);
           setPartners([]);
         }
+        
         setLoading(false);
       } catch (err) {
         console.error('Error fetching partners:', err);
@@ -77,7 +85,7 @@ const PartnersList = () => {
               </tr>
             </thead>
             <tbody>
-              {Array.isArray(partners) && partners.map((partner) => (
+              {partners.map((partner) => (
                 <tr key={partner._id} className="border-t hover:bg-gray-50">
                   <td className="py-3 px-4">{partner.name}</td>
                   <td className="py-3 px-4">{partner.phone}</td>
@@ -88,7 +96,7 @@ const PartnersList = () => {
                       {partner.status.charAt(0).toUpperCase() + partner.status.slice(1)}
                     </span>
                   </td>
-                  <td className="py-3 px-4">{partner.ordersCompleted}</td>
+                  <td className="py-3 px-4">{partner.ordersCompleted || 0}</td>
                   <td className="py-3 px-4">₹{partner.wallet?.balance || 0}</td>
                   <td className="py-3 px-4">
                     <div className="flex space-x-2">

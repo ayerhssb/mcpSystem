@@ -7,6 +7,7 @@ const seedOrders = async (mcpId, partnerIds = []) => {
     const assignedPartner = partnerIds[i % partnerIds.length];
 
     const order = await Order.create({
+      orderNumber: `ORD-${i}-${Date.now()}`,
       customer: {
         name: `Customer ${i}`,
         phone: `88000000${i}`,

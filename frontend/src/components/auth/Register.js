@@ -1,6 +1,7 @@
+// src/components/auth/Register.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { register, checkAuthStatus } from '../../services/authService';
+import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { FaUser, FaEnvelope, FaLock, FaPhone, FaMapMarkerAlt, FaUserPlus } from 'react-icons/fa';
 
@@ -11,18 +12,17 @@ const Register = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register, checkAuthStatus } = useAuth();
 
   useEffect(() => {
-    // Check if user is already authenticated
     const checkAuth = async () => {
       const isAuthenticated = await checkAuthStatus();
       if (isAuthenticated) {
         navigate('/dashboard');
       }
     };
-    
     checkAuth();
-  }, [navigate]);
+  }, [navigate, checkAuthStatus]);
 
   const handleChange = e => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -53,14 +53,13 @@ const Register = () => {
       navigate('/dashboard');
     } catch (err) {
       setError(err.message || 'Registration failed');
-      console.log(err);
+      console.error(err);
       toast.error(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Field configurations for easier rendering
   const fields = [
     { name: 'name', type: 'text', icon: FaUser, placeholder: 'Full Name' },
     { name: 'email', type: 'email', icon: FaEnvelope, placeholder: 'your@email.com' },
@@ -77,14 +76,14 @@ const Register = () => {
           <h2 className="text-3xl font-bold text-gray-800">Create Account</h2>
           <p className="text-gray-600 mt-2">Sign up to start using MCP System</p>
         </div>
-        
+
         {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md" role="alert">
+          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-md">
             <p className="font-medium">Registration Error</p>
             <p>{error}</p>
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {fields.map((field) => (
@@ -110,7 +109,7 @@ const Register = () => {
               </div>
             ))}
           </div>
-          
+
           <div className="mt-2">
             <button
               type="submit"
@@ -134,7 +133,7 @@ const Register = () => {
             </button>
           </div>
         </form>
-        
+
         <div className="mt-8 text-center">
           <p className="text-gray-600">
             Already have an account?{' '}

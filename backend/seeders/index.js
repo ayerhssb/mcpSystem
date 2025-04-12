@@ -6,7 +6,7 @@ const seedMcpWallet = require('./seedWallets');
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/mcp';
 
-const mcpId = '67f6799a6cca90bb40b50c22'; //MCP ID of user1
+const mcpId = '67fa531b7a3f8d31b565e0d7'; //MCP ID of user1
 
 const runSeed = async () => {
   try {
@@ -22,7 +22,7 @@ const runSeed = async () => {
     const orders = await seedOrders(mcpId, partners);
     console.log(`✅ ${orders.length} Orders Seeded`);
 
-    console.log('🎉 Seeding completed.');
+    console.log('Seeding completed.');
     process.exit(0);
   } catch (err) {
     console.error('❌ Error during seeding:', err);

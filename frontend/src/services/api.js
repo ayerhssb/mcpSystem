@@ -8,9 +8,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // ✅ Send cookies for session authentication
 });
 
-// Add a request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -19,23 +19,17 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add a response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
-    // Handle unauthorized errors (401)
     if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
-    
+
     const errorMessage = error.response?.data?.message || error.message || 'Something went wrong';
     return Promise.reject(new Error(errorMessage));
   }
