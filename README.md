@@ -1,4 +1,4 @@
-# MCP System - Merchant Collection Platform 💼💸
+# MCP System - Merchant Collection Platform
 
 A full-stack web dashboard that enables merchant collection partners (MCPs) to manage pickup partners, assign orders, view transactions, and handle wallet-based fund transfers in real-time.
 
@@ -6,6 +6,7 @@ This platform supports authentication, user-based wallets, and order management 
 
 ![Dashboard Screenshot](./screenshots/dashboard.png)
 ![Login Screenshot](./screenshots/login.png)
+![Partner Screenshot](./screenshots/partners.png)
 
 ---
 
@@ -84,9 +85,10 @@ node seeders/index.js
 
 
 
-| Dashboard | Login |
-|----------|--------|
-| ![Dashboard](./screenshots/dashboard.png) | ![Login](./screenshots/login.png) |
+| Dashboard | Login | Pickup Partners |
+|----------|--------|-----------------|
+| ![Dashboard](./screenshots/dashboard.png) | ![Login](./screenshots/login.png) | ![Partners](./screenshots/partners.png) |
+
 
 
 ---
