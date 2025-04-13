@@ -3,7 +3,7 @@ const User = require('../models/User');
 
 const protect = async (req, res, next) => {
   let token;
-
+  console.log('✅ JWT in cookies:', req.cookies);
   // Get token from cookie safely
   token = req.cookies?.jwt;
 
