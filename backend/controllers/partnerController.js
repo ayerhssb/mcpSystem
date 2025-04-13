@@ -1,6 +1,6 @@
-const PickupPartner = require('../models/PickupPartner');
-const Wallet = require('../models/Wallet');
-const Order = require('../models/Order');
+const PickupPartner = require("../models/PickupPartner");
+const Wallet = require("../models/Wallet");
+const Order = require("../models/Order");
 
 // @desc    Get all partners for an MCP
 // @route   GET /api/partners
@@ -13,7 +13,7 @@ const getPartners = async (req, res) => {
 
     // Build filter object
     const filter = { mcp: req.user._id };
-    
+
     // Add status filter if provided
     if (req.query.status) {
       filter.status = req.query.status;
@@ -22,14 +22,14 @@ const getPartners = async (req, res) => {
     // Search by name or phone if provided
     if (req.query.search) {
       filter.$or = [
-        { name: { $regex: req.query.search, $options: 'i' } },
-        { phone: { $regex: req.query.search, $options: 'i' } },
+        { name: { $regex: req.query.search, $options: "i" } },
+        { phone: { $regex: req.query.search, $options: "i" } },
       ];
     }
 
     const total = await PickupPartner.countDocuments(filter);
     const partners = await PickupPartner.find(filter)
-      .populate('wallet', 'balance')
+      .populate("wallet", "balance")
       .sort({ createdAt: -1 })
       .skip(startIndex)
       .limit(limit);
@@ -41,9 +41,8 @@ const getPartners = async (req, res) => {
       total,
     });
   } catch (error) {
-    
     console.error(`Error in getPartners: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -55,21 +54,21 @@ const getPartnerById = async (req, res) => {
     const partner = await PickupPartner.findOne({
       _id: req.params.id,
       mcp: req.user._id,
-    }).populate('wallet', 'balance totalAdded totalWithdrawn');
+    }).populate("wallet", "balance totalAdded totalWithdrawn");
 
     if (!partner) {
-      return res.status(404).json({ message: 'Partner not found' });
+      return res.status(404).json({ message: "Partner not found" });
     }
 
     // Get order statistics
     const completedOrders = await Order.countDocuments({
       pickupPartner: partner._id,
-      status: 'completed',
+      status: "completed",
     });
 
     const pendingOrders = await Order.countDocuments({
       pickupPartner: partner._id,
-      status: { $in: ['pending', 'in-progress'] },
+      status: { $in: ["pending", "in-progress"] },
     });
 
     const totalOrders = completedOrders + pendingOrders;
@@ -92,7 +91,7 @@ const getPartnerById = async (req, res) => {
     });
   } catch (error) {
     console.error(`Error in getPartnerById: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -100,15 +99,26 @@ const getPartnerById = async (req, res) => {
 // @route   POST /api/partners
 // @access  Private
 const createPartner = async (req, res) => {
-  try {
-    const { name, phone, email, address, paymentType, paymentAmount } = req.body;
+  console.log('📥 Incoming Partner Data:', req.body);
+  console.log('🧑‍💼 Authenticated MCP:', req.user);
+  
 
-    // Validate required fields
+  try {
+    console.log('🧾 MCP ID:', req.user._id);
+    const {
+      name,
+      email,
+      phone,
+      address,
+      paymentType,
+      paymentAmount,
+      initialBalance = 0
+    } = req.body;
+
     if (!name || !phone || !email || !address || !paymentType || !paymentAmount) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
-    // Check if partner with same email or phone already exists
     const partnerExists = await PickupPartner.findOne({
       mcp: req.user._id,
       $or: [{ email }, { phone }],
@@ -118,30 +128,32 @@ const createPartner = async (req, res) => {
       return res.status(400).json({ message: 'Partner with this email or phone already exists' });
     }
 
-    // Create new partner
+    console.log('📤 Creating partner...');
     const partner = await PickupPartner.create({
       name,
-      phone,
       email,
+      phone,
       address,
       paymentType,
       paymentAmount,
       mcp: req.user._id,
-      status: 'active',
+      status: 'active'
     });
+    console.log('✅ Partner created:', partner._id);
 
-    // Create wallet for the partner
+    console.log('📤 Creating wallet...');
     const wallet = await Wallet.create({
       owner: partner._id,
       ownerModel: 'PickupPartner',
-      balance: 0,
+      balance: Number(initialBalance)
     });
+    console.log('✅ Wallet created:', wallet._id);
 
-    // Link wallet to partner
     partner.wallet = wallet._id;
     await partner.save();
+    console.log('✅ Partner updated with wallet and saved');
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Partner created successfully',
       partner: {
         _id: partner._id,
@@ -154,10 +166,14 @@ const createPartner = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(`Error in createPartner: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Email or phone already exists' });
+    }
+    console.error('❌ Error creating partner:', error);
+    return res.status(400).json({ message: error.message || 'Failed to create partner' });
   }
 };
+
 
 // @desc    Update partner
 // @route   PUT /api/partners/:id
@@ -170,7 +186,7 @@ const updatePartner = async (req, res) => {
     });
 
     if (!partner) {
-      return res.status(404).json({ message: 'Partner not found' });
+      return res.status(404).json({ message: "Partner not found" });
     }
 
     // Update fields
@@ -186,12 +202,12 @@ const updatePartner = async (req, res) => {
     const updatedPartner = await partner.save();
 
     res.json({
-      message: 'Partner updated successfully',
+      message: "Partner updated successfully",
       partner: updatedPartner,
     });
   } catch (error) {
     console.error(`Error in updatePartner: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -206,18 +222,19 @@ const deletePartner = async (req, res) => {
     });
 
     if (!partner) {
-      return res.status(404).json({ message: 'Partner not found' });
+      return res.status(404).json({ message: "Partner not found" });
     }
 
     // Check if partner has active orders
     const activeOrders = await Order.countDocuments({
       pickupPartner: partner._id,
-      status: { $in: ['pending', 'in-progress'] },
+      status: { $in: ["pending", "in-progress"] },
     });
 
     if (activeOrders > 0) {
       return res.status(400).json({
-        message: 'Cannot delete partner with active orders. Please reassign or complete these orders first.',
+        message:
+          "Cannot delete partner with active orders. Please reassign or complete these orders first.",
       });
     }
 
@@ -227,12 +244,12 @@ const deletePartner = async (req, res) => {
     }
 
     // Delete partner
-    await partner.remove();
+    await PickupPartner.findByIdAndDelete(partner._id);
 
-    res.json({ message: 'Partner deleted successfully' });
+    res.json({ message: "Partner deleted successfully" });
   } catch (error) {
     console.error(`Error in deletePartner: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -242,18 +259,20 @@ const deletePartner = async (req, res) => {
 const getPartnerStatistics = async (req, res) => {
   try {
     // Count total partners
-    const totalPartners = await PickupPartner.countDocuments({ mcp: req.user._id });
-    
+    const totalPartners = await PickupPartner.countDocuments({
+      mcp: req.user._id,
+    });
+
     // Count active partners
     const activePartners = await PickupPartner.countDocuments({
       mcp: req.user._id,
-      status: 'active',
+      status: "active",
     });
-    
+
     // Count inactive partners
     const inactivePartners = await PickupPartner.countDocuments({
       mcp: req.user._id,
-      status: 'inactive',
+      status: "inactive",
     });
 
     // Get top performing partners (by completed orders)
@@ -269,7 +288,7 @@ const getPartnerStatistics = async (req, res) => {
     });
   } catch (error) {
     console.error(`Error in getPartnerStatistics: ${error.message}`);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
