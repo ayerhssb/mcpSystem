@@ -93,7 +93,7 @@ node seeders/index.js
 
 ---
 
-## 🌱 Future Improvements
+## Future Improvements
 
 - ✅ **Admin Panel** for platform-level user control
 - ✅ **Withdraw Requests** via banking API integration
@@ -103,4 +103,3 @@ node seeders/index.js
 - ✅ **Deployment** via:
   - 🌐 Frontend: [Vercel](https://vercel.com) or [Netlify](https://netlify.com)
   - 🚀 Backend: [Render](https://render.com), [Railway](https://railway.app)
-  - 🌍 DB: [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
